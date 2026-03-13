@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CTO Digest: The Construct</title>
+    <style>
+        /* Reset essenziale per iframes di Google Sites */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #050505;
+            --panel: #0b1016;
+            --panel-light: #111827;
+            --text-main: #d1d5db;
+            --text-muted: #64748b;
+            --accent: #22d3ee;
+            --accent-glow: rgba(34, 211, 238, 0.5);
+            --green: #4ade80;
+            --green-glow: rgba(74, 222, 128, 0.5);
+            --red: #ef4444;
+        }
+
+        body, html {
+            width: 100%;
+            min-height: 100%;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Modificato width/height in 100% per evitare overflow orizzontale su mobile */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(circle at center, rgba(34, 211, 238, 0.04) 0%, transparent 8%),
+                radial-gradient(circle at center, rgba(34, 211, 238, 0.04) 0%, transparent 8%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px 100px 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            min-height: 100dvh; /* Usa dynamic viewport per i browser mobile */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            color: #fff;
+            margin: 0 0 20px 0;
+            font-weight: normal;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--accent);
+            margin-bottom: 40px;
+        }
+
+        /* Interactive Nodes */
+        .node-container {
+            margin-top: 60px;
+            position: relative;
+            padding-left: 30px;
+            border-left: 1px dashed var(--text-muted);
+        }
+
+        .node-marker {
+            position: absolute;
+            left: -6px;
+            top: 0;
+            width: 11px;
+            height: 11px;
+            background: var(--bg);
+            border: 2px solid var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.5s;
+        }
+
+        .node-container.decrypted .node-marker {
+            border-color: var(--green);
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+        }
+        
+        .node-container.decrypted {
+            border-left: 1px solid var(--green);
+        }
+
+        .question-box {
+            background: var(--panel);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-top: 0;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .question-text span {
+            color: var(--accent);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--text-muted);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-primary {
+            border-color: var(--accent);
+            color: var(--accent);
+            padding: 15px 30px;
+            font-weight: bold;
+            max-width: none;
+        }
+
+        .btn-primary:hover {
+            background: rgba(34, 211, 238, 0.1);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* The hidden answers */
+        .answer-box {
+            display: none;
+            padding: 20px;
+            background: rgba(74, 222, 128, 0.05);
+            border-left: 3px solid var(--green);
+            margin-bottom: 40px;
+            animation: slideDown 0.5s ease-out forwards;
+        }
+
+        .answer-text {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            margin: 0 0 15px 0;
+        }
+
+        .highlight { color: var(--green); font-weight: bold; }
+        .highlight-accent { color: var(--accent); }
+
+        /* DEEP DIVE SIMULATION SECTION */
+        .deep-dive {
+            display: none;
+            margin-top: 80px;
+            animation: fadeIn 1s ease-out forwards;
+        }
+
+        .section-header {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+        }
+
+        .section-header h2 {
+            color: var(--accent);
+            margin: 0;
+            font-weight: normal;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 1.5rem;
+        }
+
+        /* Sim Layout */
+        .sim-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-bottom: 60px;
+            margin-top: 40px;
+        }
+
+        /* Neural Network Visualizer */
+        .nn-container {
+            background: var(--panel-light);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 250px;
+        }
+
+        .nn-layer {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 2;
+        }
+
+        .nn-node {
+            width: 14px; height: 14px;
+            background: var(--bg);
+            border: 2px solid var(--text-muted);
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .nn-node.input { border-color: var(--accent); }
+        .nn-node.hidden { border-color: #a855f7; }
+        .nn-node.output { border-color: var(--green); }
+        
+        .nn-node.active-pulse {
+            background: #fff;
+            box-shadow: 0 0 10px #fff;
+            border-color: #fff;
+        }
+
+        .nn-connections {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+        }
+        .signal-path { stroke: rgba(255,255,255,0.05); stroke-width: 1.5; fill: none; }
+        
+        .signal-pulse {
+            stroke: var(--accent); stroke-width: 2; fill: none;
+            stroke-dasharray: 10 100; opacity: 0;
+        }
+        .sim-running .signal-pulse {
+            opacity: 1;
+            animation: flow 1s linear infinite;
+        }
+        .sim-running .signal-pulse.p2 { stroke: #a855f7; animation-delay: 0.3s; }
+        .sim-running .signal-pulse.p3 { stroke: var(--green); animation-delay: 0.6s; }
+
+        @keyframes flow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: -20; } }
+
+        /* Sim Panels */
+        .sim-panel { display: none; background: var(--panel); border: 1px solid rgba(255,255,255,0.1); padding: 25px; border-radius: 4px; }
+        .sim-panel.active { display: block; animation: fadeIn 1s ease-out forwards; }
+        .sim-panel h3 { margin-top: 0; color: #fff; border-bottom: 1px dashed var(--text-muted); padding-bottom: 10px; font-size: 1.1rem;}
+        
+        .data-flow { font-size: 0.9rem; color: var(--text-muted); margin: 15px 0; line-height: 1.5; }
+        
+        .sim-box { margin-top: 20px; }
+        .sim-input { background: #000; padding: 15px; border-left: 3px solid var(--accent); font-family: monospace; margin-bottom: 15px; font-size: 0.95rem; word-wrap: break-word; }
+        .sim-btn { width: 100%; margin-bottom: 20px; }
+        
+        /* Text Sim */
+        .sim-results { opacity: 0.3; transition: opacity 0.5s; }
+        .prob-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.9rem; }
+        .prob-label { width: 50px; text-align: right; }
+        .prob-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .prob-fill { height: 100%; width: 0%; background: var(--text-muted); transition: width 0.5s ease-out; }
+        .prob-fill.bg-green { background: var(--green); }
+        .prob-val { width: 40px; }
+
+        /* Image Sim */
+        .pixel-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            width: 100%;
+            max-width: 180px;
+            aspect-ratio: 1;
+            margin: 0 auto 15px auto;
+            background: #000;
+            padding: 2px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .pixel { background: #111; transition: background 0.2s; }
+        .status-text { text-align: center; font-size: 0.9rem; color: var(--accent); min-height: 20px;}
+
+        /* Next Phase Buttons */
+        .next-phase-btn {
+            display: none;
+            width: 100%;
+            margin-top: 15px;
+            border-color: var(--green);
+            color: var(--green);
+            animation: fadeIn 1s ease-out forwards;
+        }
+        .next-phase-btn:hover {
+            background: rgba(74, 222, 128, 0.1);
+            box-shadow: 0 0 15px var(--green-glow);
+        }
+
+        /* Takeaway Insight Container */
+        #takeaway-container {
+            display: none;
+            animation: fadeIn 1.5s ease-out forwards;
+        }
+
+        /* Takeaway Insight */
+        .takeaway-box {
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            background: rgba(168, 85, 247, 0.05);
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 80px;
+        }
+
+        .takeaway-box h3 {
+            color: #a855f7;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0;
+        }
+
+        .link-subtle {
+            color: #a855f7;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            transition: color 0.3s;
+            word-break: break-all;
+        }
+        .link-subtle:hover { color: #d8b4fe; }
+
+        /* Animations */
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .scroll-down {
+            position: absolute;
+            bottom: 40px;
+            color: var(--text-muted);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+
+        /* Aggiustamenti drastici per Mobile Edge-to-Edge */
+        @media (max-width: 480px) {
+            .container { padding: 0 10px 80px 10px; }
+            .title { font-size: 1.8rem; }
+            .subtitle { font-size: 1rem; }
+            .question-box { padding: 15px; }
+            .question-text { font-size: 1.1rem; }
+            .answer-box { padding: 15px; }
+            .answer-text { font-size: 1rem; }
+            .section-header h2 { font-size: 1.2rem; }
+            
+            .nn-container { padding: 15px; min-height: 180px; }
+            .nn-layer { gap: 8px; }
+            .nn-node { width: 10px; height: 10px; }
+            
+            .sim-panel { padding: 15px; }
+            .sim-input { font-size: 0.85rem; padding: 10px; }
+            .takeaway-box { padding: 20px; margin-top: 40px; }
+            
+            .btn { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Hero -->
+        <div class="hero">
+            <h1 class="title">System Baseline Established.</h1>
+            <p class="subtitle">Before we dive into tools, we must understand the architecture.</p>
+            <p class="answer-text">You interact with Artificial Intelligence every day. But do you really know what happens beneath the glass of your screen?</p>
+            <p class="answer-text">To prepare for CTO Digest #1, complete the following decryption sequence.</p>
+            <div class="scroll-down">↓ Scroll to initiate ↓</div>
+        </div>
+
+        <!-- Node 1 -->
+        <div class="node-container" id="node1-container">
+            <div class="node-marker"></div>
+            <div class="question-box">
+                <p class="question-text"><span>> Query 01:</span> What is the most efficient processing unit in the known universe?</p>
+                <button class="btn" onclick="decryptNode('node1', this)">[ Decrypt Answer ]</button>
+            </div>
+            <div class="answer-box" id="node1-answer">
+                <p class="answer-text"><span class="highlight">The Biological Neuron.</span></p>
+                <p class="answer-text">Inside your brain right now, 86 billion neurons are communicating. A biological neuron receives signals through its "dendrites".</p>
+                <p class="answer-text">If the combined signal is strong enough, it breaches a threshold and "fires", sending an electrical impulse down its axon to the next neuron.</p>
+            </div>
+        </div>
+
+        <!-- Node 2 -->
+        <div class="node-container" id="node2-container" style="display: none;">
+            <div class="node-marker"></div>
+            <div class="question-box">
+                <p class="question-text"><span>> Query 02:</span> How do you teach a rock (silicon) to think?</p>
+                <button class="btn" onclick="decryptNode('node2', this)">[ Decrypt Answer ]</button>
+            </div>
+            <div class="answer-box" id="node2-answer">
+                <p class="answer-text"><span class="highlight">The Artificial Perceptron.</span></p>
+                <p class="answer-text">In the 1950s, scientists mapped biology into mathematics. An Artificial Neuron takes numerical inputs, multiplies them by a "weight" (importance), and sums them up.</p>
+                <p class="answer-text">If the math passes a specific threshold, it outputs a 1. Otherwise, a 0.</p>
+            </div>
+        </div>
+
+        <!-- Node 3 -->
+        <div class="node-container" id="node3-container" style="display: none;">
+            <div class="node-marker"></div>
+            <div class="question-box">
+                <p class="question-text"><span>> Query 03:</span> One neuron is useless. What happens when billions of blind mathematical nodes whisper to each other?</p>
+                <button class="btn" onclick="decryptNode('node3', this)">[ Decrypt Answer ]</button>
+            </div>
+            <div class="answer-box" id="node3-answer">
+                <p class="answer-text"><span class="highlight">Emergence. (The Neural Network)</span></p>
+                <p class="answer-text">By stacking thousands of neurons in layers, the output of one becomes the input of the next. Through massive trial and error (training), the network automatically adjusts its "weights".</p>
+                <p class="answer-text">Suddenly, basic math equations can recognize a face, write a poem, or debug code. <span class="highlight-accent">It learns.</span></p>
+                
+                <div style="margin-top: 30px; text-align: center;">
+                    <button class="btn btn-primary" onclick="revealDeepDive(this)">[ Initialize Simulation ]</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEEP DIVE SECTION (Simulation & Examples) -->
+        <div class="deep-dive" id="deep-dive-section">
+            
+            <div class="section-header">
+                <h2>Simulation Mode: Active</h2>
+            </div>
+            
+            <p class="answer-text">We have upgraded the architecture. You are now interfacing with a multi-layer neural network. Observe the data flow as you initialize the sequence.</p>
+
+            <!-- Network Visualizer (Shared) -->
+            <div class="nn-container">
+                <svg class="nn-connections" preserveAspectRatio="none" viewBox="0 0 100 100" id="nn-svg">
+                    <!-- Lines generated via JS -->
+                </svg>
+                <div class="nn-layer" id="layer-in">
+                    <div class="nn-node input"></div><div class="nn-node input"></div><div class="nn-node input"></div><div class="nn-node input"></div>
+                </div>
+                <div class="nn-layer" id="layer-h1">
+                    <div class="nn-node hidden"></div><div class="nn-node hidden"></div><div class="nn-node hidden"></div><div class="nn-node hidden"></div><div class="nn-node hidden"></div>
+                </div>
+                <div class="nn-layer" id="layer-h2">
+                    <div class="nn-node hidden"></div><div class="nn-node hidden"></div><div class="nn-node hidden"></div><div class="nn-node hidden"></div><div class="nn-node hidden"></div>
+                </div>
+                <div class="nn-layer" id="layer-out">
+                    <div class="nn-node output"></div><div class="nn-node output"></div><div class="nn-node output"></div><div class="nn-node output"></div>
+                </div>
+            </div>
+
+            <div class="sim-flow">
+                <!-- Text Simulation Panel -->
+                <div class="sim-panel active" id="sim-text">
+                    <h3>Phase 1: Language Model (LLM)</h3>
+                    <p class="data-flow">The AI doesn't "understand" sentences. It mathematically predicts the next logical token based on billions of context weights.</p>
+                    <div class="sim-box">
+                        <div class="sim-input">Prompt: "Follow the white <span id="text-cursor" class="cursor"></span>"</div>
+                        <button class="btn btn-primary sim-btn" onclick="runTextSim()" id="btn-text-sim">Generate Next Token</button>
+                        
+                        <div class="sim-results" id="res-text">
+                            <div class="prob-row"><span class="prob-label">car</span><div class="prob-bar"><div class="prob-fill" id="bar-car"></div></div><span class="prob-val" id="val-car">0%</span></div>
+                            <div class="prob-row"><span class="prob-label">line</span><div class="prob-bar"><div class="prob-fill" id="bar-line"></div></div><span class="prob-val" id="val-line">0%</span></div>
+                            <div class="prob-row"><span class="prob-label highlight">rabbit</span><div class="prob-bar"><div class="prob-fill bg-green" id="bar-rabbit"></div></div><span class="prob-val highlight" id="val-rabbit">0%</span></div>
+                        </div>
+                        
+                        <button class="btn btn-primary next-phase-btn" id="btn-next-image" onclick="showNextPhase('image')">[ Initialize Phase 2: Vision ]</button>
+                    </div>
+                </div>
+
+                <!-- Image Simulation Panel -->
+                <div class="sim-panel" id="sim-image">
+                    <h3>Phase 2: Diffusion Model (Vision)</h3>
+                    <p class="data-flow">The AI generates structure from pure random noise through iterative denoising guided by text prompts.</p>
+                    <div class="sim-box">
+                        <div class="pixel-grid" id="pixel-grid" style="transition: all 0.5s;">
+                            <!-- JS generates 64 pixels -->
+                        </div>
+                        <button class="btn btn-primary sim-btn" onclick="runImageSim()" id="btn-img-sim">Start Denoising</button>
+                        <div class="status-text" id="img-status">Status: Awaiting execution...</div>
+                        
+                        <button class="btn btn-primary next-phase-btn" id="btn-next-takeaway" onclick="showNextPhase('takeaway')">[ Access Final Insight ]</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Takeaway Container -->
+            <div id="takeaway-container">
+                <div class="takeaway-box">
+                    <h3>Takeaway: Food for Thought</h3>
+                    <p class="answer-text">We have spent the last 70 years trying to force silicon chips to act like biological brains, consuming massive amounts of electricity in the process.</p>
+                    <p class="answer-text" style="margin-bottom: 25px;">But what if the future of AI isn't artificial at all?</p>
+                    <p class="answer-text" style="font-size: 0.9rem; color: var(--text-muted);">
+                        If you are curious about the true frontier, take a look at <a href="https://corticallabs.com/" target="_blank" class="link-subtle">Cortical Labs</a>. 
+                        They are cultivating living human brain cells onto microchips to create "Synthetic Biological Intelligence", which learns faster than algorithms and uses a fraction of the power.
+                    </p>
+                </div>
+
+                <p style="margin-top: 60px; text-align: center; color: var(--green); font-weight: bold; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px;">
+                    Download Complete. See you on Friday, March 27, 2026.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        function decryptNode(nodeId, btnElement) {
+            btnElement.style.display = 'none';
+            const statusNode = document.createElement('span');
+            statusNode.style.color = '#4ade80';
+            statusNode.innerText = '[ DECRYPTED ]';
+            btnElement.parentNode.appendChild(statusNode);
+
+            const answerBox = document.getElementById(nodeId + '-answer');
+            answerBox.style.display = 'block';
+
+            const container = document.getElementById(nodeId + '-container');
+            container.classList.add('decrypted');
+
+            setTimeout(() => {
+                let nextNodeId = parseInt(nodeId.replace('node', '')) + 1;
+                let nextContainer = document.getElementById('node' + nextNodeId + '-container');
+                if (nextContainer) {
+                    nextContainer.style.display = 'block';
+                    nextContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 800);
+        }
+
+        function revealDeepDive(btnElement) {
+            btnElement.style.display = 'none';
+            
+            const deepDive = document.getElementById('deep-dive-section');
+            deepDive.style.display = 'block';
+            
+            // Initialize the simulation environment
+            setupNN();
+            
+            setTimeout(() => {
+                deepDive.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+
+        // --- SIMULATION LOGIC ---
+        function showNextPhase(phase) {
+            if (phase === 'image') {
+                const imgSim = document.getElementById('sim-image');
+                imgSim.classList.add('active'); 
+                imgSim.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                document.getElementById('btn-next-image').style.display = 'none'; // Hide button after click
+            } else if (phase === 'takeaway') {
+                const takeaway = document.getElementById('takeaway-container');
+                takeaway.style.display = 'block';
+                takeaway.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.getElementById('btn-next-takeaway').style.display = 'none'; // Hide button after click
+            }
+        }
+
+        function setupNN() {
+            const svg = document.getElementById('nn-svg');
+            let linesHTML = '';
+            
+            // Connect Input to Hidden 1
+            for(let i=15; i<=85; i+=23) {
+                for(let j=10; j<=90; j+=20) {
+                    linesHTML += `<line x1="10" y1="${i}" x2="36" y2="${j}" class="signal-path" />`;
+                }
+            }
+            // Connect Hidden 1 to Hidden 2
+            for(let i=10; i<=90; i+=20) {
+                for(let j=10; j<=90; j+=20) {
+                    linesHTML += `<line x1="36" y1="${i}" x2="63" y2="${j}" class="signal-path" />`;
+                }
+            }
+            // Connect Hidden 2 to Output
+            for(let i=10; i<=90; i+=20) {
+                for(let j=15; j<=85; j+=23) {
+                    linesHTML += `<line x1="63" y1="${i}" x2="90" y2="${j}" class="signal-path" />`;
+                }
+            }
+            
+            // Add dynamic pulse lines
+            linesHTML += `<line x1="10" y1="38" x2="36" y2="50" class="signal-pulse" />`;
+            linesHTML += `<line x1="36" y1="50" x2="63" y2="30" class="signal-pulse p2" />`;
+            linesHTML += `<line x1="63" y1="30" x2="90" y2="61" class="signal-pulse p3" />`;
+            linesHTML += `<line x1="10" y1="84" x2="36" y2="70" class="signal-pulse" />`;
+            linesHTML += `<line x1="36" y1="70" x2="63" y2="70" class="signal-pulse p2" />`;
+            linesHTML += `<line x1="63" y1="70" x2="90" y2="38" class="signal-pulse p3" />`;
+            
+            svg.innerHTML = linesHTML;
+            setupImageGrid();
+        }
+
+        function runTextSim() {
+            const btn = document.getElementById('btn-text-sim');
+            btn.disabled = true;
+            btn.innerText = "Calculating probabilities...";
+            
+            document.getElementById('nn-svg').classList.add('sim-running');
+            
+            let cursor = document.getElementById('text-cursor');
+            if(cursor) cursor.style.display = 'none';
+            
+            document.querySelector('.sim-results').style.opacity = '1';
+
+            animateNodes();
+
+            // Simulate AI thinking delay
+            setTimeout(() => {
+                document.getElementById('bar-car').style.width = '2%';
+                document.getElementById('val-car').innerText = '2%';
+                
+                document.getElementById('bar-line').style.width = '5%';
+                document.getElementById('val-line').innerText = '5%';
+                
+                document.getElementById('bar-rabbit').style.width = '92%';
+                document.getElementById('val-rabbit').innerText = '92%';
+            }, 1000);
+
+            // Final output
+            setTimeout(() => {
+                document.getElementById('nn-svg').classList.remove('sim-running');
+                btn.innerText = "Sequence Complete";
+                
+                const simInput = document.querySelector('.sim-input');
+                simInput.innerHTML = 'Prompt: "Follow the white <span style="color:#4ade80; font-weight:bold; font-size:1.1em; text-shadow: 0 0 10px rgba(74,222,128,0.5);">rabbit</span><span class="cursor" id="text-cursor"></span>"';
+                
+                // Show manual next button instead of auto-scroll
+                document.getElementById('btn-next-image').style.display = 'block';
+
+            }, 2500);
+        }
+
+        function resetTextSim() {
+            let btn = document.getElementById('btn-text-sim');
+            if(btn) {
+                btn.disabled = false;
+                btn.innerText = "Generate Next Token";
+            }
+            let simRes = document.querySelector('.sim-results');
+            if(simRes) simRes.style.opacity = '0.3';
+            
+            ['car','line','rabbit'].forEach(w => {
+                let bar = document.getElementById(`bar-${w}`);
+                let val = document.getElementById(`val-${w}`);
+                if(bar) bar.style.width = '0%';
+                if(val) val.innerText = '0%';
+            });
+            
+            const inputEl = document.querySelector('.sim-input');
+            if(inputEl) inputEl.innerHTML = 'Prompt: "Follow the white <span id="text-cursor" class="cursor"></span>"';
+        }
+
+        function setupImageGrid() {
+            const grid = document.getElementById('pixel-grid');
+            if (!grid) return;
+            if (document.getElementById('px-0')) return; // Prevent recreation if already exists
+            
+            grid.innerHTML = ''; // Clear out any comments/whitespace before injecting pixels
+            for(let i=0; i<64; i++) {
+                grid.innerHTML += `<div class="pixel" id="px-${i}"></div>`;
+            }
+            applyNoise();
+        }
+
+        function applyNoise() {
+            for(let i=0; i<64; i++) {
+                let v = Math.floor(Math.random() * 255);
+                let pixel = document.getElementById(`px-${i}`);
+                if (pixel) {
+                    pixel.style.background = `rgb(${v},${v},${v})`;
+                }
+            }
+        }
+
+        let noiseInterval;
+
+        function runImageSim() {
+            const btn = document.getElementById('btn-img-sim');
+            if(btn) btn.disabled = true;
+            document.getElementById('nn-svg').classList.add('sim-running');
+            animateNodes();
+            
+            let status = document.getElementById('img-status');
+            
+            // Step 1: Noise
+            if(status) status.innerText = "Step 1/3: Analyzing random noise...";
+            noiseInterval = setInterval(applyNoise, 100);
+
+            // Step 2: Shapes emerge
+            setTimeout(() => {
+                clearInterval(noiseInterval);
+                if(status) status.innerText = "Step 2/3: Identifying structural patterns...";
+                for(let i=0; i<64; i++) {
+                    let isCenter = (i%8>1 && i%8<6 && i>15 && i<48);
+                    let v = isCenter ? Math.floor(Math.random()*100 + 155) : Math.floor(Math.random()*50);
+                    let pixel = document.getElementById(`px-${i}`);
+                    if (pixel) {
+                        pixel.style.background = `rgb(${v},${v},${v})`;
+                    }
+                }
+            }, 1500);
+
+            // Step 3: Final Image (Rabbit silhouette)
+            setTimeout(() => {
+                if(status) status.innerText = "Step 3/3: Output generation complete.";
+                document.getElementById('nn-svg').classList.remove('sim-running');
+                if(btn) btn.innerText = "Image Generated";
+                
+                // Emphasize the final image grid
+                const grid = document.getElementById('pixel-grid');
+                if(grid) {
+                    grid.style.borderColor = 'var(--green)';
+                    grid.style.boxShadow = '0 0 20px rgba(74, 222, 128, 0.2)';
+                }
+
+                // 8x8 Pixel Art Rabbit
+                const rabbitPixels = [
+                    0,0,1,0,0,1,0,0,
+                    0,0,1,0,0,1,0,0,
+                    0,0,1,1,1,1,0,0,
+                    0,1,1,1,1,1,1,0,
+                    0,1,2,1,1,2,1,0,
+                    0,1,1,1,1,1,1,0,
+                    0,0,1,3,3,1,0,0,
+                    0,0,0,1,1,0,0,0
+                ];
+                
+                for(let i=0; i<64; i++) {
+                    let bg = '#111';
+                    if (rabbitPixels[i] === 1) bg = '#fff';
+                    if (rabbitPixels[i] === 2) bg = '#ef4444'; // Red eye
+                    if (rabbitPixels[i] === 3) bg = '#f472b6'; // Pink nose
+                    let pixel = document.getElementById(`px-${i}`);
+                    if (pixel) {
+                        pixel.style.background = bg;
+                    }
+                }
+
+                // Show manual next button instead of auto-scroll
+                document.getElementById('btn-next-takeaway').style.display = 'block';
+
+            }, 3000);
+        }
+
+        function resetImageSim() {
+            clearInterval(noiseInterval);
+            let btn = document.getElementById('btn-img-sim');
+            if(btn) {
+                btn.disabled = false;
+                btn.innerText = "Start Denoising";
+            }
+            let status = document.getElementById('img-status');
+            if(status) status.innerText = "Status: Awaiting execution...";
+            
+            if(document.getElementById('px-0')) {
+                applyNoise();
+            }
+        }
+
+        function animateNodes() {
+            const nodes = document.querySelectorAll('.nn-node');
+            nodes.forEach(n => {
+                // Randomly flash nodes to simulate processing
+                for(let i=0; i<3; i++) {
+                    setTimeout(() => {
+                        n.classList.add('active-pulse');
+                        setTimeout(() => n.classList.remove('active-pulse'), 150 + Math.random()*200);
+                    }, Math.random() * 2500);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
